@@ -1,5 +1,4 @@
 using System.Data;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
@@ -8,8 +7,8 @@ namespace LabAPI_MVC.Controllers;
 public class Biomaterial
 {
     public int? Id { get; set; }
-    public string? Name  { get; set; }
-    public string? Description  { get; set; }
+    public string? Name  { get; init; }
+    public string? Description  { get; init; }
 }
 
 [ApiController]
@@ -19,11 +18,12 @@ public class BiomaterialController : ControllerBase
     [Route("api/biomaterial")]
     public async Task<IEnumerable<Biomaterial>> Get(SqlConnection connection)
     {
-        var sql = @"
-        select b.biomaterial_id, 
-               b.name,
-               b.description
-          from prelab.biomaterial b";
+        const string sql = """
+                                   select b.biomaterial_id, 
+                                          b.name,
+                                          b.description
+                                     from prelab.biomaterial b
+                           """;
     
         var biomaterials = new List<Biomaterial>();
     
@@ -53,12 +53,13 @@ public class BiomaterialController : ControllerBase
     [Route("api/biomaterial/{id}")]
     public async Task<Biomaterial?> GetBiomaterial(SqlConnection connection, int id)
     {
-        var sql = @"
-        select b.biomaterial_id, 
-               b.name,
-               b.description
-          from prelab.biomaterial b
-         where b.biomaterial_id = @id";
+        const string sql = """
+                                   select b.biomaterial_id, 
+                                          b.name,
+                                          b.description
+                                     from prelab.biomaterial b
+                                    where b.biomaterial_id = @id
+                           """;
 
         Biomaterial? biomaterial = null;
     
@@ -91,10 +92,11 @@ public class BiomaterialController : ControllerBase
     [Route("api/biomaterial")]
     public async Task<Biomaterial?> Post(SqlConnection connection, [FromBody] Biomaterial biomaterial)
     {
-        var sql = @"
-            INSERT INTO prelab.biomaterial (name, description) 
-            VALUES (@name, @description); 
-            SET @id=SCOPE_IDENTITY()";
+        const string sql = """
+                                       INSERT INTO prelab.biomaterial (name, description) 
+                                       VALUES (@name, @description); 
+                                       SET @id=SCOPE_IDENTITY()
+                           """;
         SqlCommand command = new SqlCommand(sql, connection);
  
         command.Parameters.AddWithValue("@name",  biomaterial.Name ?? (object)DBNull.Value);
@@ -123,7 +125,7 @@ public class BiomaterialController : ControllerBase
     [Route("api/biomaterial/{id}")]
     public async Task<string> Delete(SqlConnection connection, int id)
     {
-        var sql = "delete from prelab.biomaterial where biomaterial_id = @id";
+        const string sql = "delete from prelab.biomaterial where biomaterial_id = @id";
         SqlCommand command = new SqlCommand(sql, connection);
  
         command.Parameters.AddWithValue("@id", id);
