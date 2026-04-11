@@ -1,21 +1,16 @@
 using System.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using LabAPI_MVC.Entities;
 
 namespace LabAPI_MVC.Controllers;
 
-public class Biomaterial
-{
-    public int? Id { get; set; }
-    public string? Name  { get; init; }
-    public string? Description  { get; init; }
-}
-
 [ApiController]
+[Route("api/biomaterials")]
 public class BiomaterialController : ControllerBase
 {
     [HttpGet]
-    [Route("api/biomaterial")]
+    [Route("")]
     public async Task<IEnumerable<Biomaterial>> Get(SqlConnection connection)
     {
         const string sql = """
@@ -50,7 +45,7 @@ public class BiomaterialController : ControllerBase
     }
     
     [HttpGet]
-    [Route("api/biomaterial/{id}")]
+    [Route("{id}")]
     public async Task<Biomaterial?> GetBiomaterial(SqlConnection connection, int id)
     {
         const string sql = """
@@ -89,7 +84,7 @@ public class BiomaterialController : ControllerBase
     }
 
     [HttpPost]
-    [Route("api/biomaterial")]
+    [Route("")]
     public async Task<Biomaterial?> Post(SqlConnection connection, [FromBody] Biomaterial biomaterial)
     {
         const string sql = """
@@ -122,7 +117,7 @@ public class BiomaterialController : ControllerBase
     }
     
     [HttpDelete]
-    [Route("api/biomaterial/{id}")]
+    [Route("{id}")]
     public async Task<string> Delete(SqlConnection connection, int id)
     {
         const string sql = "delete from prelab.biomaterial where biomaterial_id = @id";
