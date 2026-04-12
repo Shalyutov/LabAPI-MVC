@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using LabAPI_MVC.Entities;
@@ -125,26 +126,31 @@ public class ReferralController : ControllerBase
         
         // get referral samples
         const string sqlSamples = """
-                                  select s.sample_id,
-                                        s.issued,
-                                        bc.bio_case_id,
-                                        bc.name,
-                                        bc.description,
-                                        bcn.bio_container_id,
-                                        bcn.name,
-                                        bcn.description,
-                                        b.biomaterial_id,
-                                        b.name,
-                                        b.description
-                                   from prelab.sample s
-                                   join prelab.bio_case bc
-                                     on bc.bio_case_id = s.bio_case_id
-                                   join prelab.bio_container bcn
-                                     on bcn.bio_container_id = bc.bio_container_id
-                                   join prelab.biomaterial b
-                                     on b.biomaterial_id = bcn.biomaterial_id
-                                  where s.referral_id = @id
-                                    and s.patient_id = @patientId
+                                     select s.sample_id,
+                                            s.issued,
+                                            bc.bio_case_id,
+                                            bc.name,
+                                            bc.description,
+                                            bcn.bio_container_id,
+                                            bcn.name,
+                                            bcn.description,
+                                            b.biomaterial_id,
+                                            b.name,
+                                            b.description,
+                                            sp.supplier_id,
+                                            sp.name,
+                                            sp.description
+                                       from prelab.sample s
+                                       join prelab.bio_case bc
+                                         on bc.bio_case_id = s.bio_case_id
+                                       join prelab.bio_container bcn
+                                         on bcn.bio_container_id = bc.bio_container_id
+                                       join prelab.biomaterial b
+                                         on b.biomaterial_id = bcn.biomaterial_id
+                                       join prelab.supplier sp
+                                         on sp.supplier_id = bc.supplier_id
+                                      where s.referral_id = @id
+                                        and s.patient_id = @patientId
                                   """;
         command = new SqlCommand(sqlSamples, connection);
         command.Parameters.AddWithValue("@id", referral.Id);
@@ -175,6 +181,12 @@ public class ReferralController : ControllerBase
                                 Name = reader.GetSqlString(9).IsNull ? null : reader.GetSqlString(9).Value,
                                 Description = reader.GetSqlString(10).IsNull ? null :  reader.GetSqlString(10).Value
                             }
+                        },
+                        Supplier =  new Supplier
+                        {
+                            Id = reader.GetInt32(11),
+                            Name = reader.GetSqlString(12).IsNull ? null : reader.GetSqlString(12).Value,
+                            Description = reader.GetSqlString(13).IsNull ? null : reader.GetSqlString(13).Value,
                         }
                     }
                 };
@@ -186,4 +198,177 @@ public class ReferralController : ControllerBase
         
         return referral;
     }
+
+    [HttpPost]
+    [Route("")]
+    public async Task<Referral?> CreateReferral(SqlConnection connection, [FromBody] Referral? referral)
+    {
+        SqlCommand command;
+        referral ??= new Referral();
+        
+        if (referral.Patient?.Id != null)
+        {
+            const string sqlPatient = """
+                                      select count(1)
+                                        from prelab.patient p
+                                       where p.patient_id = @id
+                                      """;
+            command = new SqlCommand(sqlPatient, connection);
+            command.Parameters.AddWithValue("@id", referral.Patient?.Id);
+            var isExists = await command.ExecuteScalarAsync();
+            if (isExists == null) return null;
+            if ((int)isExists == 0) return null;
+        }
+
+        referral.Id ??= Guid.NewGuid();
+        referral.IssuedAt ??= DateTime.Now;
+        
+        const string sql = """
+                           insert into prelab.referral (referral_id, patient_id, issued, weight, height, sex)
+                           values (@id, @patient, @issued, @weight, @height, @sex);
+                           """;
+        command = new SqlCommand(sql, connection);
+ 
+        command.Parameters.AddWithValue("@id", referral.Id);
+        command.Parameters.AddWithValue("@issued", referral.IssuedAt);
+        command.Parameters.AddWithValue("@patient",  referral.Patient?.Id ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@weight", referral.Weight ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@height", referral.Height ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@sex", referral.Sex ?? (object)DBNull.Value);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        if (affected > 0) return referral;
+        return null;
+    }
+
+    [HttpPost]
+    [Route("{id}")]
+    public async Task<string> SetPatient(SqlConnection connection, string id, [FromBody] Patient patient)
+    {
+        const string sqlReferral= """
+                                  select count(1)
+                                    from prelab.referral r
+                                   where r.referral_id = @id
+                                  """;
+        var command = new SqlCommand(sqlReferral, connection);
+        command.Parameters.AddWithValue("@id", Guid.Parse(id));
+        var isReferralExists = await command.ExecuteScalarAsync();
+        if (isReferralExists == null) return "null exist referral";
+        if ((int)isReferralExists == 0) return "not exist referral";
+        
+        if (patient.Id != null)
+        {
+            const string sqlPatient = """
+                                      select count(1)
+                                        from prelab.patient p
+                                       where p.patient_id = @id
+                                      """;
+            command = new SqlCommand(sqlPatient, connection);
+            command.Parameters.AddWithValue("@id", patient.Id);
+            var isPatientExists = await command.ExecuteScalarAsync();
+            if (isPatientExists == null) return "null exist patient";
+            if ((int)isPatientExists == 0) return "not exist patient";
+        }
+        
+        const string sql = """
+                           update prelab.referral
+                              set patient_id = @patient
+                            where referral_id = @id
+                           """;
+        command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", Guid.Parse(id));
+        command.Parameters.AddWithValue("@patient",  patient.Id ?? (object)DBNull.Value);
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0 ? "ok" : "error";
+    }
+
+    [HttpPost]
+    [Route("{id}/tests")]
+    public async Task<string> SetTest(SqlConnection connection, string id, [FromBody] Test test)
+    {
+        const string sqlReferral= """
+                                  select count(1)
+                                    from prelab.referral r
+                                   where r.referral_id = @id
+                                  """;
+        var command = new SqlCommand(sqlReferral, connection);
+        command.Parameters.AddWithValue("@id", Guid.Parse(id));
+        var isReferralExists = await command.ExecuteScalarAsync();
+        if (isReferralExists == null) return "null exist referral";
+        if ((int)isReferralExists == 0) return "not exist referral";
+        
+        if (test.Id != null)
+        {
+            const string sqlPatient = """
+                                      select count(1)
+                                        from prelab.test t
+                                       where t.test_id = @id
+                                      """;
+            command = new SqlCommand(sqlPatient, connection);
+            command.Parameters.AddWithValue("@id", test.Id);
+            var isTestExists = await command.ExecuteScalarAsync();
+            if (isTestExists == null) return "null exist test";
+            if ((int)isTestExists == 0) return "not exist test";
+        }
+        
+        const string sql = """
+                           if not exists (select 1 
+                            from prelab.referral_test 
+                           where referral_id = @id 
+                             and test_id = @test)
+                             begin
+                           insert into prelab.referral_test (referral_id, test_id)
+                           values (@id, @test);
+                           end;
+                           """;
+        command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", Guid.Parse(id));
+        command.Parameters.AddWithValue("@test", test.Id);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0 ? "ok" : "exist";
+    }
+
+    [HttpDelete]
+    [Route("{id}/tests")]
+    public async Task<string> DeleteTest(SqlConnection connection, string id, [FromBody] Test test)
+    {
+        const string sqlReferral= """
+                                  select count(1)
+                                    from prelab.referral r
+                                   where r.referral_id = @id
+                                  """;
+        var command = new SqlCommand(sqlReferral, connection);
+        command.Parameters.AddWithValue("@id", Guid.Parse(id));
+        var isReferralExists = await command.ExecuteScalarAsync();
+        if (isReferralExists == null) return "null exist referral";
+        if ((int)isReferralExists == 0) return "not exist referral";
+        
+        if (test.Id != null)
+        {
+            const string sqlPatient = """
+                                      select count(1)
+                                        from prelab.test t
+                                       where t.test_id = @id
+                                      """;
+            command = new SqlCommand(sqlPatient, connection);
+            command.Parameters.AddWithValue("@id", test.Id);
+            var isTestExists = await command.ExecuteScalarAsync();
+            if (isTestExists == null) return "null exist test";
+            if ((int)isTestExists == 0) return "not exist test";
+        }
+        
+        const string sql = """
+                           delete from prelab.referral_test
+                            where referral_id = @id
+                              and test_id = @test;
+                           """;
+        command = new SqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@id", Guid.Parse(id));
+        command.Parameters.AddWithValue("@test", test.Id);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0 ? "ok" : "nothing to delete";
+    }
+    
 }

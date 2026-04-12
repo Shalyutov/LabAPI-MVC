@@ -7,4 +7,8 @@ public class Referral
     public DateTime? IssuedAt  { get; set; }
     public List<Test>? Tests { get; set; }
     public List<Sample>? Samples { get; set; }
+    
+    public decimal? Weight { get; set; }
+    public decimal? Height { get; set; }
+    public int? Sex { get; set; }
 }
