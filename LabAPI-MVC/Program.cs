@@ -47,13 +47,14 @@ catch (SqlException ex)
     return;
 }
 
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseCors("AllowAll");
 
 app.Run();
+
 
 if (connection.State == ConnectionState.Open)
 {
