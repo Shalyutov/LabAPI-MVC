@@ -21,59 +21,31 @@ public class ReferralController : ControllerBase
 
         if (referral.Patient is { Id: not null })
         {
-            var patient = await patientRepo.Get(referral.Patient.Id.Value);
-            referral.Patient = patient;
+            referral.Patient = await patientRepo.Get(referral.Patient.Id.Value);
         }
-
-        var tests = await referralRepo.GetTests(guid);
-        referral.Tests = tests;
-        
-        var samples = await sampleRepo.GetByReferral(guid);
-        referral.Samples = samples;
+        referral.Tests = await referralRepo.GetTests(guid);
+        referral.Samples = await sampleRepo.GetByReferral(guid);
         
         return referral;
     }
 
     [HttpPost]
     [Route("")]
-    public async Task<Referral?> CreateReferral(SqlConnection connection, [FromBody] Referral? referral)
+    public async Task<Referral?> CreateReferral(PatientRepo patientRepo, ReferralRepo referralRepo, [FromBody] Referral? referral)
     {
-        SqlCommand command;
         referral ??= new Referral();
         
         if (referral.Patient?.Id != null)
         {
-            const string sqlPatient = """
-                                      select count(1)
-                                        from prelab.patient p
-                                       where p.patient_id = @id
-                                      """;
-            command = new SqlCommand(sqlPatient, connection);
-            command.Parameters.AddWithValue("@id", referral.Patient?.Id);
-            var isExists = await command.ExecuteScalarAsync();
-            if (isExists == null) return null;
-            if ((int)isExists == 0) return null;
+            var isExists = await patientRepo.IsExist(referral.Patient!.Id.Value);
+            if (!isExists) return null;
         }
 
         referral.Id ??= Guid.NewGuid();
         referral.IssuedAt ??= DateTime.Now;
         
-        const string sql = """
-                           insert into prelab.referral (referral_id, patient_id, issued, weight, height, sex)
-                           values (@id, @patient, @issued, @weight, @height, @sex);
-                           """;
-        command = new SqlCommand(sql, connection);
- 
-        command.Parameters.AddWithValue("@id", referral.Id);
-        command.Parameters.AddWithValue("@issued", referral.IssuedAt);
-        command.Parameters.AddWithValue("@patient",  referral.Patient?.Id ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@weight", referral.Weight ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@height", referral.Height ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@sex", referral.Sex ?? (object)DBNull.Value);
-        
-        var affected = await command.ExecuteNonQueryAsync();
-        if (affected > 0) return referral;
-        return null;
+        var result = await referralRepo.Create(referral);
+        return result ? referral : null;
     }
 
     [HttpPost]

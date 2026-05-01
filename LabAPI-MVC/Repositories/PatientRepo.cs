@@ -34,4 +34,13 @@ public class PatientRepo(SqlConnection connection)
 
         return patient;
     }
+
+    public async Task<bool> IsExist(Guid guid)
+    {
+        var command = new SqlCommand(SqlQueries.IsPatientExists, connection);
+        command.Parameters.AddWithValue("@id", guid);
+        var isExists = await command.ExecuteScalarAsync();
+        if (isExists == null) return false;
+        return (int)isExists == 0;
+    }
 }

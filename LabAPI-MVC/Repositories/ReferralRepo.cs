@@ -66,4 +66,19 @@ public class ReferralRepo(SqlConnection connection)
         
         return tests;
     }
+
+    public async Task<bool> Create(Referral referral)
+    {
+        var command = new SqlCommand(SqlQueries.CreatePatient, connection);
+ 
+        command.Parameters.AddWithValue("@id", referral.Id);
+        command.Parameters.AddWithValue("@issued", referral.IssuedAt);
+        command.Parameters.AddWithValue("@patient",  referral.Patient?.Id ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@weight", referral.Weight ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@height", referral.Height ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@sex", referral.Sex ?? (object)DBNull.Value);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
 }

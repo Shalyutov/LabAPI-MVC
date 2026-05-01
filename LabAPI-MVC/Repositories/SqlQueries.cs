@@ -63,4 +63,13 @@ public static class SqlQueries
                                                     on sp.supplier_id = bc.supplier_id
                                                  where s.referral_id = @id
                                              """;
+    public const string IsPatientExists = """
+                                             select count(1)
+                                               from prelab.patient p
+                                              where p.patient_id = @id
+                                          """;
+    public const string CreatePatient = """
+                                            insert into prelab.referral (referral_id, patient_id, issued, weight, height, sex)
+                                            values (@id, @patient, @issued, @weight, @height, @sex);
+                                        """;
 }
