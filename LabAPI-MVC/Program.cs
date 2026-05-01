@@ -1,30 +1,19 @@
 using System.Data;
+using LabAPI_MVC.Repositories;
 using Microsoft.Data.SqlClient;
-/*
-var connectionString = "Server=localhost;Database=lis;User Id=sa;Password=shaly799-=;Encrypt=False;";
-var connection = new SqlConnection(connectionString);
-try
-{
-    connection.Open();
-    Console.WriteLine("Подключение открыто");
-    Console.WriteLine("Свойства подключения:");
-    Console.WriteLine($"\tБаза данных: {connection.Database}");
-    Console.WriteLine($"\tСервер: {connection.DataSource}");
-    Console.WriteLine($"\tВерсия сервера: {connection.ServerVersion}");
-    Console.WriteLine($"\tСостояние: {connection.State}");
-    Console.WriteLine($"\tWorkstationld: {connection.WorkstationId}");
-}
-catch (SqlException ex)
-{
-    Console.WriteLine(ex.Message);
-    return;
-}*/
 
 var connection = new SqlConnection();
+var patientRepo = new PatientRepo(connection);
+var referralRepo = new ReferralRepo(connection);
+var sampleRepo = new SampleRepo(connection);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton(connection);
+builder.Services.AddSingleton(patientRepo);
+builder.Services.AddSingleton(referralRepo);
+builder.Services.AddSingleton(sampleRepo);
 
 var app = builder.Build();
 
@@ -47,14 +36,12 @@ catch (SqlException ex)
     return;
 }
 
-
 app.UseAuthorization();
 
 app.MapControllers();
 app.UseCors("AllowAll");
 
 app.Run();
-
 
 if (connection.State == ConnectionState.Open)
 {
