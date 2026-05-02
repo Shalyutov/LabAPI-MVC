@@ -102,4 +102,20 @@ public static class SqlQueries
                                                    sex = @sex
                                              where referral_id = @id;
                                          """;
+
+    public const string CreateSample = """
+                                          insert into prelab.sample (referral_id, sample_id, bio_case_id, issued)
+                                          values (@referral, @sample, @bio_case_id, @issued);
+                                       """;
+    
+    public const string DeleteSample = """
+                                          delete from prelab.sample
+                                          where sample_id = @sample;
+                                       """;
+
+    public const string IsBioCaseExists = """
+                                              select count(1)
+                                              from prelab.bio_case
+                                              where bio_case_id = @bio_case_id;
+                                          """;
 }

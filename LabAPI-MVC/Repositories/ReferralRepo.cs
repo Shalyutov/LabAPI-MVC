@@ -28,9 +28,7 @@ public class ReferralRepo(SqlConnection connection)
                 IssuedAt = reader.GetDateTime(2),
                 Weight = reader.GetSqlDecimal(3).IsNull ? null : reader.GetSqlDecimal(3).Value,
                 Height = reader.GetSqlDecimal(4).IsNull ? null : reader.GetSqlDecimal(4).Value,
-                Sex = reader.GetSqlInt32(5).IsNull ? null : reader.GetSqlInt32(5).Value,
-                Tests = [],
-                Samples = []
+                Sex = reader.GetSqlInt32(5).IsNull ? null : reader.GetSqlInt32(5).Value
             };
         }
         await reader.CloseAsync();

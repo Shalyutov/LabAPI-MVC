@@ -31,7 +31,7 @@ public class ReferralController : ControllerBase
     [Route("")]
     public async Task<Referral?> CreateReferral(PatientRepo patientRepo, ReferralRepo referralRepo, [FromBody] Referral? referral)
     {
-        referral ??= new Referral{Tests = [], Samples = []};
+        referral ??= new Referral();
         
         if (referral.Patient?.Id != null)
         {
@@ -100,5 +100,22 @@ public class ReferralController : ControllerBase
         referral.Id ??= referralId;
         
         return await referralRepo.UpdateReferral(referral) ? "ok" : "not updated";
+    }
+
+    [HttpPost]
+    [Route("{id}/samples")]
+    public async Task<string> CreateSample(ReferralRepo referralRepo, SampleRepo sampleRepo, BioCaseRepo bioCaseRepo, string id, [FromBody] Sample sample)
+    {
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return "not exist referral";
+        if (!await bioCaseRepo.IsExists(sample.BioCase!.Id!.Value))
+            return "not exist bio case";
+
+        sample.Id ??= Guid.NewGuid();
+        sample.IssuedAt ??= DateTime.Now;
+        sample.Referral ??= new Referral{Id = referralId};
+        
+        return await sampleRepo.Create(sample) ? "ok" : "not updated";
     }
 }

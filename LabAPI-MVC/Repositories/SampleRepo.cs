@@ -53,4 +53,27 @@ public class SampleRepo(SqlConnection connection)
         
         return samples;
     }
+
+    public async Task<bool> Create(Sample sample)
+    {
+        var command = new SqlCommand(SqlQueries.CreateSample, connection);
+ 
+        command.Parameters.AddWithValue("@sample", sample.Id);
+        command.Parameters.AddWithValue("@issued", sample.IssuedAt);
+        command.Parameters.AddWithValue("@referral", sample.Referral?.Id);
+        command.Parameters.AddWithValue("@bio_case_id", sample.BioCase?.Id);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
+    
+    public async Task<bool> Delete(Guid guid)
+    {
+        var command = new SqlCommand(SqlQueries.DeleteSample, connection);
+ 
+        command.Parameters.AddWithValue("@sample", guid);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
 }
