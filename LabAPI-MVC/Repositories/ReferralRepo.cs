@@ -90,7 +90,7 @@ public class ReferralRepo(SqlConnection connection)
         var isReferralExists = await command.ExecuteScalarAsync();
         
         if (isReferralExists == null) return false;
-        return (int)isReferralExists == 0;
+        return (int)isReferralExists > 0;
     }
 
     public async Task<bool> SetPatient(Guid referral, Guid? patient)

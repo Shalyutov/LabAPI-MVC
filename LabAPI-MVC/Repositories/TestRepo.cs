@@ -11,6 +11,6 @@ public class TestRepo(SqlConnection connection)
         var isTestExists = await command.ExecuteScalarAsync();
         
         if (isTestExists == null) return false;
-        return (int)isTestExists == 0;
+        return (int)isTestExists > 0;
     }
 }

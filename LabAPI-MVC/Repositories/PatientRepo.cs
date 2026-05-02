@@ -41,6 +41,6 @@ public class PatientRepo(SqlConnection connection)
         command.Parameters.AddWithValue("@id", guid);
         var isExists = await command.ExecuteScalarAsync();
         if (isExists == null) return false;
-        return (int)isExists == 0;
+        return (int)isExists > 0;
     }
 }

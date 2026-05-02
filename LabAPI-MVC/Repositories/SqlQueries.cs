@@ -51,7 +51,8 @@ public static class SqlQueries
                                                        b.description,
                                                        sp.supplier_id,
                                                        sp.name,
-                                                       sp.description
+                                                       sp.description,
+                                                       s.referral_id
                                                   from prelab.sample s
                                                   join prelab.bio_case bc
                                                     on bc.bio_case_id = s.bio_case_id
@@ -77,7 +78,8 @@ public static class SqlQueries
                                                        b.description,
                                                        sp.supplier_id,
                                                        sp.name,
-                                                       sp.description
+                                                       sp.description,
+                                                       s.referral_id
                                                   from prelab.sample s
                                                   join prelab.bio_case bc
                                                     on bc.bio_case_id = s.bio_case_id

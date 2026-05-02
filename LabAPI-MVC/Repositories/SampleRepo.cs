@@ -22,7 +22,8 @@ public class SampleRepo(SqlConnection connection)
             {
                 Id = reader.GetGuid(0),
                 IssuedAt = reader.GetDateTime(1),
-                BioCase = new BioCase()
+                Referral = new Referral{Id = reader.GetGuid(14)},
+                BioCase = new BioCase
                 {
                     Id = reader.GetInt32(2),
                     Name = reader.GetSqlString(3).IsNull ? null : reader.GetSqlString(3).Value,
@@ -72,7 +73,8 @@ public class SampleRepo(SqlConnection connection)
             {
                 Id = reader.GetGuid(0),
                 IssuedAt = reader.GetDateTime(1),
-                BioCase = new BioCase()
+                Referral = new Referral{Id = reader.GetGuid(14)},
+                BioCase = new BioCase
                 {
                     Id = reader.GetInt32(2),
                     Name = reader.GetSqlString(3).IsNull ? null : reader.GetSqlString(3).Value,
