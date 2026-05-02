@@ -63,6 +63,32 @@ public static class SqlQueries
                                                     on sp.supplier_id = bc.supplier_id
                                                  where s.referral_id = @id
                                              """;
+    public const string GetSample = """
+                                                select s.sample_id,
+                                                       s.issued,
+                                                       bc.bio_case_id,
+                                                       bc.name,
+                                                       bc.description,
+                                                       bcn.bio_container_id,
+                                                       bcn.name,
+                                                       bcn.description,
+                                                       b.biomaterial_id,
+                                                       b.name,
+                                                       b.description,
+                                                       sp.supplier_id,
+                                                       sp.name,
+                                                       sp.description
+                                                  from prelab.sample s
+                                                  join prelab.bio_case bc
+                                                    on bc.bio_case_id = s.bio_case_id
+                                                  join prelab.bio_container bcn
+                                                    on bcn.bio_container_id = bc.bio_container_id
+                                                  join prelab.biomaterial b
+                                                    on b.biomaterial_id = bcn.biomaterial_id
+                                                  join prelab.supplier sp
+                                                    on sp.supplier_id = bc.supplier_id
+                                                 where s.sample_id = @id
+                                             """;
     public const string IsPatientExists = """
                                              select count(1)
                                                from prelab.patient p
@@ -118,4 +144,5 @@ public static class SqlQueries
                                               from prelab.bio_case
                                               where bio_case_id = @bio_case_id;
                                           """;
+    
 }

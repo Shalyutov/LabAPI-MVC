@@ -118,4 +118,15 @@ public class ReferralController : ControllerBase
         
         return await sampleRepo.Create(sample) ? "ok" : "not updated";
     }
+
+    [HttpGet]
+    [Route("{id}/samples")]
+    public async Task<List<Sample>?> GetSamples(ReferralRepo referralRepo, SampleRepo sampleRepo, string id)
+    {
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return null;
+        
+        return await sampleRepo.GetByReferral(referralId);
+    }
 }
