@@ -72,4 +72,34 @@ public static class SqlQueries
                                             insert into prelab.referral (referral_id, patient_id, issued, weight, height, sex)
                                             values (@id, @patient, @issued, @weight, @height, @sex);
                                         """;
+    public const string IsReferralExists= """
+                                             select count(1)
+                                               from prelab.referral r
+                                              where r.referral_id = @id
+                                          """;
+    public const string SetPatientReferral = """
+                                                update prelab.referral
+                                                   set patient_id = @patient
+                                                 where referral_id = @id
+                                             """;
+    public const string IsTestExists = """
+                                           select count(1)
+                                             from prelab.test t
+                                            where t.test_id = @id
+                                       """;
+    public const string LinkReferralTest = """
+                                           insert into prelab.referral_test (referral_id, test_id)
+                                           values (@id, @test);
+                                           """;
+    public const string UnlinkReferralTest = """
+                                             delete from prelab.referral_test
+                                             where referral_id = @id and test_id = @test;
+                                             """;
+    public const string UpdateReferral = """
+                                            update prelab.referral
+                                               set weight = @weight,
+                                                   height = @height,
+                                                   sex = @sex
+                                             where referral_id = @id;
+                                         """;
 }

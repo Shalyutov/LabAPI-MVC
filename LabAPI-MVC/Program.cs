@@ -6,6 +6,7 @@ var connection = new SqlConnection();
 var patientRepo = new PatientRepo(connection);
 var referralRepo = new ReferralRepo(connection);
 var sampleRepo = new SampleRepo(connection);
+var testRepo = new TestRepo(connection);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddSingleton(connection);
 builder.Services.AddSingleton(patientRepo);
 builder.Services.AddSingleton(referralRepo);
 builder.Services.AddSingleton(sampleRepo);
+builder.Services.AddSingleton(testRepo);
 
 var app = builder.Build();
 

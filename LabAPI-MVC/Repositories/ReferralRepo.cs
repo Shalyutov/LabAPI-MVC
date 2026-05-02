@@ -1,3 +1,4 @@
+using System.Data;
 using LabAPI_MVC.Entities;
 using Microsoft.Data.SqlClient;
 
@@ -27,7 +28,9 @@ public class ReferralRepo(SqlConnection connection)
                 IssuedAt = reader.GetDateTime(2),
                 Weight = reader.GetSqlDecimal(3).IsNull ? null : reader.GetSqlDecimal(3).Value,
                 Height = reader.GetSqlDecimal(4).IsNull ? null : reader.GetSqlDecimal(4).Value,
-                Sex = reader.GetSqlInt32(5).IsNull ? null : reader.GetSqlInt32(5).Value
+                Sex = reader.GetSqlInt32(5).IsNull ? null : reader.GetSqlInt32(5).Value,
+                Tests = [],
+                Samples = []
             };
         }
         await reader.CloseAsync();
@@ -74,6 +77,68 @@ public class ReferralRepo(SqlConnection connection)
         command.Parameters.AddWithValue("@id", referral.Id);
         command.Parameters.AddWithValue("@issued", referral.IssuedAt);
         command.Parameters.AddWithValue("@patient",  referral.Patient?.Id ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@weight", referral.Weight ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@height", referral.Height ?? (object)DBNull.Value);
+        command.Parameters.AddWithValue("@sex", referral.Sex ?? (object)DBNull.Value);
+        
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
+
+    public async Task<bool> IsExists(Guid guid)
+    {
+        var command = new SqlCommand(SqlQueries.IsReferralExists, connection);
+        command.Parameters.AddWithValue("@id", guid);
+        var isReferralExists = await command.ExecuteScalarAsync();
+        
+        if (isReferralExists == null) return false;
+        return (int)isReferralExists == 0;
+    }
+
+    public async Task<bool> SetPatient(Guid referral, Guid? patient)
+    {
+        var command = new SqlCommand(SqlQueries.SetPatientReferral, connection);
+        command.Parameters.AddWithValue("@id", referral);
+        command.Parameters.AddWithValue("@patient",  patient ?? (object)DBNull.Value);
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
+
+    public async Task<bool> LinkTest(Guid referral, int test)
+    {
+        try
+        {
+            var command = new SqlCommand(SqlQueries.LinkReferralTest, connection);
+            command.Parameters.AddWithValue("@id", referral);
+            command.Parameters.AddWithValue("@test", test);
+
+            var affected = await command.ExecuteNonQueryAsync();
+            return affected > 0;
+        }
+        catch (ConstraintException)
+        {
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    public async Task<bool> UnlinkTest(Guid referral, int test)
+    {
+        var command = new SqlCommand(SqlQueries.UnlinkReferralTest, connection);
+        command.Parameters.AddWithValue("@id", referral);
+        command.Parameters.AddWithValue("@test", test);
+
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
+
+    public async Task<bool> UpdateReferral(Referral referral)
+    {
+        var command = new SqlCommand(SqlQueries.UpdateReferral, connection);
+        command.Parameters.AddWithValue("@id", referral.Id);
         command.Parameters.AddWithValue("@weight", referral.Weight ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@height", referral.Height ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@sex", referral.Sex ?? (object)DBNull.Value);

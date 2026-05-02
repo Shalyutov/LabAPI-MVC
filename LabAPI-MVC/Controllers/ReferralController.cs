@@ -1,6 +1,4 @@
-using System.Data.Common;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using LabAPI_MVC.Entities;
 using LabAPI_MVC.Repositories;
 
@@ -33,180 +31,74 @@ public class ReferralController : ControllerBase
     [Route("")]
     public async Task<Referral?> CreateReferral(PatientRepo patientRepo, ReferralRepo referralRepo, [FromBody] Referral? referral)
     {
-        referral ??= new Referral();
+        referral ??= new Referral{Tests = [], Samples = []};
         
         if (referral.Patient?.Id != null)
         {
-            var isExists = await patientRepo.IsExist(referral.Patient!.Id.Value);
-            if (!isExists) return null;
+            if (!await patientRepo.IsExist(referral.Patient!.Id.Value)) 
+                return null;
         }
 
         referral.Id ??= Guid.NewGuid();
         referral.IssuedAt ??= DateTime.Now;
         
-        var result = await referralRepo.Create(referral);
-        return result ? referral : null;
+        return await referralRepo.Create(referral) ? referral : null;
     }
 
     [HttpPost]
     [Route("{id}/patient")]
-    public async Task<string> SetPatient(SqlConnection connection, string id, [FromBody] Patient patient)
+    public async Task<string> SetPatient(ReferralRepo referralRepo, PatientRepo patientRepo, string id, [FromBody] Patient patient)
     {
-        const string sqlReferral= """
-                                  select count(1)
-                                    from prelab.referral r
-                                   where r.referral_id = @id
-                                  """;
-        var command = new SqlCommand(sqlReferral, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        var isReferralExists = await command.ExecuteScalarAsync();
-        if (isReferralExists == null) return "null exist referral";
-        if ((int)isReferralExists == 0) return "not exist referral";
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return "not exist referral";
         
-        if (patient.Id != null)
-        {
-            const string sqlPatient = """
-                                      select count(1)
-                                        from prelab.patient p
-                                       where p.patient_id = @id
-                                      """;
-            command = new SqlCommand(sqlPatient, connection);
-            command.Parameters.AddWithValue("@id", patient.Id);
-            var isPatientExists = await command.ExecuteScalarAsync();
-            if (isPatientExists == null) return "null exist patient";
-            if ((int)isPatientExists == 0) return "not exist patient";
-        }
-        
-        const string sql = """
-                           update prelab.referral
-                              set patient_id = @patient
-                            where referral_id = @id
-                           """;
-        command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        command.Parameters.AddWithValue("@patient",  patient.Id ?? (object)DBNull.Value);
-        var affected = await command.ExecuteNonQueryAsync();
-        return affected > 0 ? "ok" : "error";
+        if (patient.Id != null && !await patientRepo.IsExist(patient.Id.Value)) 
+            return "not exist patient";
+
+        return await referralRepo.SetPatient(referralId, patient.Id) ? "ok" : "error";
     }
 
     [HttpPost]
     [Route("{id}/tests")]
-    public async Task<string> SetTest(SqlConnection connection, string id, [FromBody] Test test)
+    public async Task<string> SetTest(ReferralRepo referralRepo, TestRepo testRepo, string id, [FromBody] Test test)
     {
-        const string sqlReferral= """
-                                  select count(1)
-                                    from prelab.referral r
-                                   where r.referral_id = @id
-                                  """;
-        var command = new SqlCommand(sqlReferral, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        var isReferralExists = await command.ExecuteScalarAsync();
-        if (isReferralExists == null) return "null exist referral";
-        if ((int)isReferralExists == 0) return "not exist referral";
+        if (test.Id == null)
+            return "no test specified";
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return "not exist referral";
+        if (!await testRepo.IsTestExists(test.Id.Value)) 
+            return "not exist test";
         
-        if (test.Id != null)
-        {
-            const string sqlPatient = """
-                                      select count(1)
-                                        from prelab.test t
-                                       where t.test_id = @id
-                                      """;
-            command = new SqlCommand(sqlPatient, connection);
-            command.Parameters.AddWithValue("@id", test.Id);
-            var isTestExists = await command.ExecuteScalarAsync();
-            if (isTestExists == null) return "null exist test";
-            if ((int)isTestExists == 0) return "not exist test";
-        }
-        
-        const string sql = """
-                           if not exists (select 1 
-                            from prelab.referral_test 
-                           where referral_id = @id 
-                             and test_id = @test)
-                             begin
-                           insert into prelab.referral_test (referral_id, test_id)
-                           values (@id, @test);
-                           end;
-                           """;
-        command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        command.Parameters.AddWithValue("@test", test.Id);
-        
-        var affected = await command.ExecuteNonQueryAsync();
-        return affected > 0 ? "ok" : "exist";
+        return await referralRepo.LinkTest(referralId, test.Id.Value) ? "ok" : "exist";
     }
 
     [HttpDelete]
     [Route("{id}/tests")]
-    public async Task<string> DeleteTest(SqlConnection connection, string id, [FromBody] Test test)
+    public async Task<string> DeleteTest(ReferralRepo referralRepo, TestRepo testRepo, string id, [FromBody] Test test)
     {
-        const string sqlReferral= """
-                                  select count(1)
-                                    from prelab.referral r
-                                   where r.referral_id = @id
-                                  """;
-        var command = new SqlCommand(sqlReferral, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        var isReferralExists = await command.ExecuteScalarAsync();
-        if (isReferralExists == null) return "null exist referral";
-        if ((int)isReferralExists == 0) return "not exist referral";
+        if (test.Id == null)
+            return "no test specified";
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return "not exist referral";
+        if (!await testRepo.IsTestExists(test.Id.Value)) 
+            return "not exist test";
         
-        if (test.Id != null)
-        {
-            const string sqlPatient = """
-                                      select count(1)
-                                        from prelab.test t
-                                       where t.test_id = @id
-                                      """;
-            command = new SqlCommand(sqlPatient, connection);
-            command.Parameters.AddWithValue("@id", test.Id);
-            var isTestExists = await command.ExecuteScalarAsync();
-            if (isTestExists == null) return "null exist test";
-            if ((int)isTestExists == 0) return "not exist test";
-        }
-        
-        const string sql = """
-                           delete from prelab.referral_test
-                            where referral_id = @id
-                              and test_id = @test;
-                           """;
-        command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        command.Parameters.AddWithValue("@test", test.Id);
-        
-        var affected = await command.ExecuteNonQueryAsync();
-        return affected > 0 ? "ok" : "nothing to delete";
+        return await referralRepo.UnlinkTest(referralId, test.Id.Value) ? "ok" : "nothing to delete";
     }
 
     [HttpPut]
     [Route("{id}")]
-    public async Task<string> UpdateReferral(SqlConnection connection, string id, [FromBody] Referral test)
+    public async Task<string> UpdateReferral(ReferralRepo referralRepo, string id, [FromBody] Referral referral)
     {
-        const string sqlReferral= """
-                                  select count(1)
-                                    from prelab.referral r
-                                   where r.referral_id = @id
-                                  """;
-        var command = new SqlCommand(sqlReferral, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        var isReferralExists = await command.ExecuteScalarAsync();
-        if (isReferralExists == null) return "null exist referral";
-        if ((int)isReferralExists == 0) return "not exist referral";
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return "not exist referral";
         
-        const string sql = """
-                           update prelab.referral
-                              set weight = @weight,
-                                  height = @height,
-                                  sex = @sex
-                            where referral_id = @id;
-                           """;
-        command = new SqlCommand(sql, connection);
-        command.Parameters.AddWithValue("@id", Guid.Parse(id));
-        command.Parameters.AddWithValue("@weight", test.Weight ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@height", test.Height ?? (object)DBNull.Value);
-        command.Parameters.AddWithValue("@sex", test.Sex ?? (object)DBNull.Value);
+        referral.Id ??= referralId;
         
-        var affected = await command.ExecuteNonQueryAsync();
-        return affected > 0 ? "ok" : "nothing to delete";
+        return await referralRepo.UpdateReferral(referral) ? "ok" : "not updated";
     }
 }
