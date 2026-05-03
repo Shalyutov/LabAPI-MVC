@@ -96,7 +96,7 @@ public static class SqlQueries
                                                from prelab.patient p
                                               where p.patient_id = @id
                                           """;
-    public const string CreatePatient = """
+    public const string CreateReferral = """
                                             insert into prelab.referral (referral_id, patient_id, issued, weight, height, sex)
                                             values (@id, @patient, @issued, @weight, @height, @sex);
                                         """;
@@ -146,5 +146,30 @@ public static class SqlQueries
                                               from prelab.bio_case
                                               where bio_case_id = @bio_case_id;
                                           """;
+
+    public const string CreatePatient = """
+                                           insert into prelab.patient (patient_id, full_name, birth_date, document, email, phone)
+                                           values (@id, @fullname, @birthdate, @document, @email, @phone);
+                                        """;
     
+    public const string UpdatePatient = """
+                                           update prelab.patient 
+                                           set full_name = @fullname, 
+                                               birth_date = @birthdate, 
+                                               document = @document, 
+                                               email = @email, 
+                                               phone  = @phone
+                                           where patient_id = @id;
+                                        """;
+
+    public const string DeletePatient = """
+                                           delete from prelab.patient
+                                           where patient_id = @id;
+                                        """;
+
+    public const string DeleteReferral = """
+                                            delete from prelab.referral
+                                            where referral_id = @id;
+                                         """;
+
 }

@@ -129,4 +129,15 @@ public class ReferralController : ControllerBase
         
         return await sampleRepo.GetByReferral(referralId);
     }
+
+    [HttpDelete]
+    [Route("{id}")]
+    public async Task<string> Delete(ReferralRepo referralRepo, string id)
+    {
+        var referralId = Guid.Parse(id);
+        if (!await referralRepo.IsExists(referralId)) 
+            return "not exists";
+        
+        return await referralRepo.Delete(referralId) ? "ok" : "not deleted";
+    }
 }

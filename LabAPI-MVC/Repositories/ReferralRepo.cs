@@ -70,7 +70,7 @@ public class ReferralRepo(SqlConnection connection)
 
     public async Task<bool> Create(Referral referral)
     {
-        var command = new SqlCommand(SqlQueries.CreatePatient, connection);
+        var command = new SqlCommand(SqlQueries.CreateReferral, connection);
  
         command.Parameters.AddWithValue("@id", referral.Id);
         command.Parameters.AddWithValue("@issued", referral.IssuedAt);
@@ -141,6 +141,15 @@ public class ReferralRepo(SqlConnection connection)
         command.Parameters.AddWithValue("@height", referral.Height ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("@sex", referral.Sex ?? (object)DBNull.Value);
         
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
+    }
+    
+    public async Task<bool> Delete(Guid id)
+    {
+        var command = new SqlCommand(SqlQueries.DeleteReferral, connection);
+        command.Parameters.AddWithValue("@id", id);
+
         var affected = await command.ExecuteNonQueryAsync();
         return affected > 0;
     }
