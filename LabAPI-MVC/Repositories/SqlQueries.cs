@@ -172,4 +172,9 @@ public static class SqlQueries
                                             where referral_id = @id;
                                          """;
 
+    public const string CreateWorkItem = """
+                                            insert into lab.work_item (referral_id, test_id, sample_id, equipment_id, created_at)
+                                            values (@referral, @test, @sample, @equipment, @created_at);
+                                            SET @id=SCOPE_IDENTITY();
+                                         """;
 }

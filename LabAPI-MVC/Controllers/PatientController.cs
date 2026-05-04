@@ -36,6 +36,7 @@ public class PatientController : ControllerBase
         patient.Id ??= patientId;
         return await patientRepo.Update(patient);
     }
+    
     [HttpDelete]
     [Route("{id}")]
     public async Task<bool> DeletePatient(PatientRepo patientRepo, string id)
