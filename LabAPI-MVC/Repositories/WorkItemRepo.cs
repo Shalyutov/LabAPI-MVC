@@ -16,7 +16,7 @@ public class WorkItemRepo(SqlConnection connection)
         command.Parameters.AddWithValue("@equipment", workItem.Equipment.Id);
         command.Parameters.AddWithValue("@created_at",  workItem.Created);
         
-        SqlParameter idParam = new SqlParameter
+        var idParam = new SqlParameter
         {
             ParameterName = "@id",
             SqlDbType = SqlDbType.Int,
@@ -31,5 +31,23 @@ public class WorkItemRepo(SqlConnection connection)
         
         workItem.Id = (int)idParam.Value;
         return workItem;
+    }
+    
+    public async Task<bool> IsExists(int id)
+    {
+        var command = new SqlCommand(SqlQueries.IsWorkItemExists, connection);
+        command.Parameters.AddWithValue("@id", id);
+        var isReferralExists = await command.ExecuteScalarAsync();
+        
+        if (isReferralExists == null) return false;
+        return (int)isReferralExists > 0;
+    }
+
+    public async Task<bool> Delete(int id)
+    {
+        var command = new SqlCommand(SqlQueries.DeleteWorkItem, connection);
+        command.Parameters.AddWithValue("@referral", id);
+        var affected = await command.ExecuteNonQueryAsync();
+        return affected > 0;
     }
 }

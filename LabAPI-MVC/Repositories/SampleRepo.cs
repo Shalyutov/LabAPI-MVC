@@ -127,4 +127,14 @@ public class SampleRepo(SqlConnection connection)
         var affected = await command.ExecuteNonQueryAsync();
         return affected > 0;
     }
+    
+    public async Task<bool> IsExists(Guid guid)
+    {
+        var command = new SqlCommand(SqlQueries.IsSampleExists, connection);
+        command.Parameters.AddWithValue("@id", guid);
+        var isSampleExists = await command.ExecuteScalarAsync();
+        
+        if (isSampleExists == null) return false;
+        return (int)isSampleExists > 0;
+    }
 }

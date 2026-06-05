@@ -146,6 +146,11 @@ public static class SqlQueries
                                               from prelab.bio_case
                                               where bio_case_id = @bio_case_id;
                                           """;
+    public const string IsSampleExists = """
+                                              select count(1)
+                                              from prelab.samples
+                                              where bio_case_id = @id;
+                                          """;
 
     public const string CreatePatient = """
                                            insert into prelab.patient (patient_id, full_name, birth_date, document, email, phone)
@@ -176,5 +181,15 @@ public static class SqlQueries
                                             insert into lab.work_item (referral_id, test_id, sample_id, equipment_id, created_at)
                                             values (@referral, @test, @sample, @equipment, @created_at);
                                             SET @id=SCOPE_IDENTITY();
+                                         """;
+
+    public const string DeleteWorkItem = """
+                                         delete from lab.work_item 
+                                         where work_item_id = @id;
+                                         """;
+    public const string IsWorkItemExists = """
+                                             select count(1)
+                                             from lab.work_item
+                                             where work_item_id = @id;
                                          """;
 }
