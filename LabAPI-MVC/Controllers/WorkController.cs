@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace LabAPI_MVC.Controllers;
 
 [ApiController]
-[Route("api/work_item")]
+[Route("api/workitem")]
 public class WorkController: ControllerBase
 {
     [HttpPost]
@@ -34,6 +34,59 @@ public class WorkController: ControllerBase
             return "not exists";
         
         return await workItemRepo.Delete(itemId) ? "ok" : "not deleted";
+    }
+    
+    [HttpGet]
+    [Route("{id}")]
+    public async Task<WorkItem?> GetWorkItem(WorkItemRepo workItemRepo, string id)
+    {
+        var itemId = int.Parse(id);
+
+        if (!await workItemRepo.IsExists(itemId))
+            return null;
+        
+        return await workItemRepo.Get(itemId);
+    }
+    
+    [HttpPost]
+    [Route("{id}/processed")]
+    public async Task<string> ProcessedWorkItem(WorkItemRepo workItemRepo, string id)
+    {
+        var itemId = int.Parse(id);
+
+        if (!await workItemRepo.IsExists(itemId))
+            return "not exists";
+        
+        return await workItemRepo.SetProcessed(itemId, DateTime.Now) ? "ok" : "not updated";
+    }
+    
+    [HttpPost]
+    [Route("{id}/canceled")]
+    public async Task<string> CanceledWorkItem(WorkItemRepo workItemRepo, string id)
+    {
+        var itemId = int.Parse(id);
+
+        if (!await workItemRepo.IsExists(itemId))
+            return "not exists";
+        
+        return await workItemRepo.SetCanceled(itemId, DateTime.Now) ? "ok" : "not updated";
+    }
+
+    [HttpPost]
+    [Route("{id}/result")]
+    public async Task<string> ResultWorkItem(WorkItemRepo workItemRepo, string id, [FromBody] List<ResultDetail> resultDetails)
+    {
+        var itemId = int.Parse(id);
+
+        if (!await workItemRepo.IsExists(itemId))
+            return "not exists";
+
+        foreach (var res in resultDetails)
+        {
+            // todo repo
+        }
+
+        throw new NotImplementedException();
     }
     
 }

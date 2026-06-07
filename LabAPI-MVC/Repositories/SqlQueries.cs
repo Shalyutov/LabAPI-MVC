@@ -192,4 +192,38 @@ public static class SqlQueries
                                              from lab.work_item
                                              where work_item_id = @id;
                                          """;
+
+    public const string GetWorkItem = """
+                                      select referral_id, 
+                                             test_id, 
+                                             sample_id, 
+                                             equipment_id, 
+                                             created_at, 
+                                             processed_at, 
+                                             canceled_at
+                                        from lab.work_item
+                                       where work_item_id = @id;
+                                      """;
+    public const string GetWorkItemsByEquipment = """
+                                      select referral_id, 
+                                             test_id, 
+                                             sample_id, 
+                                             equipment_id, 
+                                             created_at, 
+                                             processed_at, 
+                                             canceled_at
+                                        from lab.work_item
+                                       where equipment_id = @id and processed_at is null;
+                                      """;
+
+    public const string UpdateProcessedWorkItem = """
+                                         update lab.work_item
+                                         set processed_at = @processed_at
+                                         where work_item_id = @id;
+                                         """;
+    public const string UpdateCanceledWorkItem = """
+                                                  update lab.work_item
+                                                  set canceled_at = @cancelled_at
+                                                  where work_item_id = @id;
+                                                  """;
 }
