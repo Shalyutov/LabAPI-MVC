@@ -81,19 +81,55 @@ public class WorkController: ControllerBase
 
     [HttpPost]
     [Route("{id}/result")]
-    public async Task<string> ResultWorkItem(WorkItemRepo workItemRepo, string id, [FromBody] List<ResultDetail> resultDetails)
+    public async Task<string> PostResultWorkItem(WorkItemRepo workItemRepo, ResultRepo resultRepo, string id, [FromBody] List<ResultDetail> resultDetails)
     {
         var itemId = int.Parse(id);
 
         if (!await workItemRepo.IsExists(itemId))
             return "not exists";
 
-        foreach (var res in resultDetails)
+        var r = await resultRepo.CreateResult(itemId);
+
+        if (!r)
         {
-            // todo repo
+            return "not created";
         }
 
-        throw new NotImplementedException();
+        foreach (var res in resultDetails)
+        {
+            var v = await resultRepo.CreateResultDetail(itemId, res);
+            if (!v)
+            {
+                return $"item_id: {itemId} not inserted detail: {res.Indicator}";
+            }
+        }
+
+        return "ok";
+    }
+
+    [HttpGet]
+    [Route("{id}/result")]
+    public async Task<LabResult?> GetResultWorkItem(WorkItemRepo workItemRepo, ResultRepo resultRepo, string id)
+    {
+        var itemId = int.Parse(id);
+
+        if (!await workItemRepo.IsExists(itemId))
+            return null;
+        
+        var result = await resultRepo.GetResult(itemId);
+        return result;
     }
     
+    [HttpDelete]
+    [Route("{id}/result")]
+    public async Task<string> DeleteResultWorkItem(WorkItemRepo workItemRepo, ResultRepo resultRepo, string id)
+    {
+        var itemId = int.Parse(id);
+
+        if (!await workItemRepo.IsExists(itemId))
+            return "not exists";
+        
+        var result = await resultRepo.DeleteResult(itemId);
+        return result ? "ok" : "not deleted";
+    }
 }
