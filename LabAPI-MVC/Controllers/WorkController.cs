@@ -12,8 +12,6 @@ public class WorkController: ControllerBase
     [Route("")]
     public async Task<string> CreateWorkItem(TestRepo testRepo, SampleRepo sampleRepo, ReferralRepo referralRepo, WorkItemRepo workItemRepo, [FromBody] WorkItem workItem)
     {
-        if (!await referralRepo.IsExists(workItem.Referral.Id!.Value)) 
-            return "not exist referral";
         if (!await sampleRepo.IsExists(workItem.Sample.Id!.Value)) 
             return "not exist referral";
         if (!await testRepo.IsTestExists(workItem.Test.Id!.Value))
@@ -46,6 +44,15 @@ public class WorkController: ControllerBase
             return null;
         
         return await workItemRepo.Get(itemId);
+    }
+    
+    [HttpGet]
+    [Route("")]
+    public async Task<List<WorkItem>> GetWorkItemByEquipment(WorkItemRepo workItemRepo, [FromQuery] string equipmentId)
+    {
+        var id = int.Parse(equipmentId);
+        
+        return await workItemRepo.GetByEquipment(id);
     }
     
     [HttpPost]

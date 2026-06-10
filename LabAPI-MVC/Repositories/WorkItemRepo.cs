@@ -10,7 +10,6 @@ public class WorkItemRepo(SqlConnection connection)
     {
         var command = new SqlCommand(SqlQueries.CreateWorkItem, connection);
  
-        command.Parameters.AddWithValue("@referral",  workItem.Referral.Id);
         command.Parameters.AddWithValue("@test", workItem.Test.Id);
         command.Parameters.AddWithValue("@sample",  workItem.Sample.Id);
         command.Parameters.AddWithValue("@equipment", workItem.Equipment.Id);
@@ -68,7 +67,6 @@ public class WorkItemRepo(SqlConnection connection)
             workItem = new WorkItem
             {
                 Id = id,
-                Referral = new Referral{Id = reader.GetGuid(0)},
                 Test = new Test{Id = reader.GetInt32(1)},
                 Sample = new Sample{Id = reader.GetGuid(2)},
                 Equipment = new Equipment{Id = reader.GetInt32(3)},
@@ -82,6 +80,36 @@ public class WorkItemRepo(SqlConnection connection)
         return workItem;
     }
     
+    public async Task<List<WorkItem>> GetByEquipment(int id)
+    {
+        var command = new SqlCommand(SqlQueries.GetWorkItemsByEquipment, connection);
+        command.Parameters.AddWithValue("@id", id);
+        var reader = await command.ExecuteReaderAsync();
+        if (!reader.HasRows)
+        {
+            return [];
+        }
+
+        var workItems = new List<WorkItem>();
+        while (reader.Read())
+        {
+            var workItem = new WorkItem
+            {
+                Id = id,
+                Test = new Test{Id = reader.GetInt32(1)},
+                Sample = new Sample{Id = reader.GetGuid(2)},
+                Equipment = new Equipment{Id = reader.GetInt32(3)},
+                Created = reader.GetDateTime(4),
+                Processed = reader.GetSqlDateTime(5).IsNull ? null : reader.GetSqlDateTime(5).Value,
+                Canceled =  reader.GetSqlDateTime(6).IsNull ? null : reader.GetSqlDateTime(6).Value
+            };
+            workItems.Add(workItem);
+        }
+        await reader.CloseAsync();
+        
+        return workItems;
+    }
+    
     public async Task<bool> SetProcessed(int id, DateTime processedAt)
     {
         var command = new SqlCommand(SqlQueries.UpdateProcessedWorkItem, connection);
@@ -93,10 +121,12 @@ public class WorkItemRepo(SqlConnection connection)
     
     public async Task<bool> SetCanceled(int id, DateTime canceledAt)
     {
-        var command = new SqlCommand(SqlQueries.UpdateProcessedWorkItem, connection);
+        var command = new SqlCommand(SqlQueries.UpdateCanceledWorkItem, connection);
         command.Parameters.AddWithValue("@id", id);
         command.Parameters.AddWithValue("@canceled_at", canceledAt);
         var affected = await command.ExecuteNonQueryAsync();
         return affected > 0;
     }
+    
+    
 }

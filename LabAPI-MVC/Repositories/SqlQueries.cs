@@ -178,7 +178,7 @@ public static class SqlQueries
                                          """;
 
     public const string CreateWorkItem = """
-                                            insert into lab.work_item (referral_id, test_id, sample_id, equipment_id, created_at)
+                                            insert into lab.work_item (test_id, sample_id, equipment_id, created_at)
                                             values (@referral, @test, @sample, @equipment, @created_at);
                                             SET @id=SCOPE_IDENTITY();
                                          """;
@@ -194,8 +194,7 @@ public static class SqlQueries
                                          """;
 
     public const string GetWorkItem = """
-                                      select referral_id, 
-                                             test_id, 
+                                      select test_id, 
                                              sample_id, 
                                              equipment_id, 
                                              created_at, 
@@ -205,15 +204,16 @@ public static class SqlQueries
                                        where work_item_id = @id;
                                       """;
     public const string GetWorkItemsByEquipment = """
-                                      select referral_id, 
-                                             test_id, 
+                                      select test_id, 
                                              sample_id, 
                                              equipment_id, 
                                              created_at, 
                                              processed_at, 
                                              canceled_at
                                         from lab.work_item
-                                       where equipment_id = @id and processed_at is null;
+                                       where equipment_id = @id 
+                                         and processed_at is null
+                                       order by work_item_id;
                                       """;
 
     public const string UpdateProcessedWorkItem = """
@@ -226,4 +226,37 @@ public static class SqlQueries
                                                   set canceled_at = @cancelled_at
                                                   where work_item_id = @id;
                                                   """;
+
+    public const string CreateResult = """
+                                          insert into lab.result (work_item_id, issued_at)
+                                          values (@work_item_id, @issued_at);
+                                       """;
+    public const string CreateResultDetail = """
+                                          insert into lab.result_detail (work_item_id, indicator_id, bool_value, deciaml_value, str_value)
+                                          values (@work_item_id, @indicator_id, @bool_value, @decimal_value, @str_value);
+                                       """;
+
+    public const string GetResult = """
+                                    select issued_at, confirmed_at
+                                    from lab.result
+                                    where work_item_id = @id;
+                                    """;
+    public const string GetResultDetails = """
+                                    select indicator_id, bool_value, deciaml_value, str_value
+                                    from lab.result_detail
+                                    where work_item_id = @id;
+                                    """;
+    public const string UpdateConfirmedResult = """
+                                                 update lab.result
+                                                 set confirmed_at = @confirmed_at
+                                                 where work_item_id = @id;
+                                                 """;
+    public const string DeleteResult = """
+                                                delete from lab.result
+                                                where work_item_id = @id;
+                                                """;
+    public const string DeleteResultDetails = """
+                                       delete from lab.result_detail
+                                       where work_item_id = @id;
+                                       """;
 }

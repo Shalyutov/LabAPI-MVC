@@ -9,6 +9,7 @@ var sampleRepo = new SampleRepo(connection);
 var testRepo = new TestRepo(connection);
 var bioCaseRepo = new BioCaseRepo(connection);
 var workItemRepo = new WorkItemRepo(connection);
+var resultsRepo = new ResultRepo(connection);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,8 @@ builder.Services.AddSingleton(sampleRepo);
 builder.Services.AddSingleton(testRepo);
 builder.Services.AddSingleton(bioCaseRepo);
 builder.Services.AddSingleton(workItemRepo);
+builder.Services.AddSingleton(resultsRepo);
+builder.Services.AddSingleton(resultsRepo);
 
 var app = builder.Build();
 
